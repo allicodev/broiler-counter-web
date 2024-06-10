@@ -9,7 +9,6 @@ import {
   InputOTPSlot,
 } from "@/components/ui/input-otp";
 import { useToast } from "@/components/ui/use-toast";
-import { ToastAction } from "@/components/ui/toast";
 
 export default function Home() {
   const [loading, setLoading] = useState(false);
@@ -18,10 +17,10 @@ export default function Home() {
   const { toast } = useToast();
 
   return (
-    <div className="flex items-center justify-center min-h-screen flex-col">
+    <div className="flex flex-col items-center justify-center min-h-screen">
       {loading ? (
-        <span className="text-slate-300 flex">
-          Please wait... <LoadingSpinner className="ml-2 mb-2" />
+        <span className="flex text-slate-300">
+          Please wait... <LoadingSpinner className="mb-2 ml-2" />
         </span>
       ) : (
         <span className="mb-2">Input your PIN</span>
@@ -41,9 +40,8 @@ export default function Home() {
               setLoading(false);
               setPin("");
               toast({
-                title: "Success",
+                title: "Successly Logged In",
                 description: "Redirecting to Home Page",
-                action: <ToastAction altText="a">OKAY</ToastAction>,
               });
               Cookie.set("isLoggedIn", "true");
               Cookie.set("lastPin", pin);
