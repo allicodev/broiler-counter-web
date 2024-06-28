@@ -22,6 +22,6 @@ export async function POST(req: Request) {
   );
 }
 
-export async function OPTIONS() {
+export async function OPTION() {
   return Response.json({}, { status: 200 });
 }
