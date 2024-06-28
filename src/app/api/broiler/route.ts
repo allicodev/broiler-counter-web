@@ -4,7 +4,10 @@ import Broiler from "@/database/model/broiler";
 export async function GET() {
   await dbConnect();
   let broilers = await Broiler.find().sort({ createdAt: -1 });
-  return Response.json({ success: true, code: 200, data: broilers });
+  return Response.json(
+    { success: true, code: 200, data: broilers },
+    { status: 200 }
+  );
 }
 
 export async function POST(req: Request) {

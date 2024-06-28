@@ -15,4 +15,5 @@ export interface ExtendedResponse<T> extends Response {
 export interface Broiler {
   count: number;
   createdAt: Date;
+  month?: number;
 }
