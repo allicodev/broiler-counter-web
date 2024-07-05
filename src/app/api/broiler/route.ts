@@ -13,8 +13,8 @@ export async function GET() {
 export async function POST(req: Request) {
   await dbConnect();
   let body = await req.json();
-  const count = body?.broiler ?? 0;
-  await Broiler.create({ count });
+  const { broiler, total, price } = body;
+  await Broiler.create({ count: broiler, price, totalAmount: total });
 
   return Response.json(
     { success: true, code: 200, message: "Sent Successfully" },

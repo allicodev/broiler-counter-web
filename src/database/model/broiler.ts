@@ -4,7 +4,7 @@ const BroilerSchema = new mongoose.Schema(
   {
     name: {
       type: String,
-      defailt: "Broiler",
+      default: "Broiler",
     },
     count: {
       type: Number,
