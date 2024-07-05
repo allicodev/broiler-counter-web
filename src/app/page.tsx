@@ -3,7 +3,7 @@
 import React, { ReactNode, useEffect, useState } from "react";
 import { Bar } from "react-chartjs-2";
 import { ColumnDef } from "@tanstack/react-table";
-import { LogOut, Settings } from "lucide-react";
+import { LogOut, Settings, FileBarChart2 } from "lucide-react";
 import Cookie from "js-cookie";
 import axios from "axios";
 import dayjs from "dayjs";
@@ -118,7 +118,6 @@ export default function HomePage() {
         </div>
       ),
     },
-
     {
       accessorKey: "count",
       header: "Broiler Count",
@@ -162,6 +161,9 @@ export default function HomePage() {
   return (
     <TooltipProvider>
       <div className="flex flex-row justify-end gap-2 mt-10 mr-10">
+        <Button onClick={() => (window.location.href = "/report")}>
+          <FileBarChart2 className="w-4 h-4 mr-2" /> Reports
+        </Button>
         <Dialog open={openUpdate} onOpenChange={setOpenUpdate}>
           <STooltip>
             <DialogTrigger asChild>
@@ -383,7 +385,7 @@ export default function HomePage() {
             ]}
           />
         </div>
-        <DataTable columns={columns} data={broilersRaw} />
+        <DataTable columns={columns} data={broilersRaw} classNames="mt-10" />
       </div>
     </TooltipProvider>
   );

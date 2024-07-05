@@ -13,7 +13,11 @@ export interface ExtendedResponse<T> extends Response {
 }
 
 export interface Broiler {
+  _id?: string;
+  name: string;
   count: number;
+  price: number;
+  totalAmount: number;
   createdAt: Date;
   month?: number;
 }

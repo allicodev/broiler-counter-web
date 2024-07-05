@@ -2,7 +2,19 @@ import mongoose from "mongoose";
 
 const BroilerSchema = new mongoose.Schema(
   {
+    name: {
+      type: String,
+      defailt: "Broiler",
+    },
     count: {
+      type: Number,
+      required: true,
+    },
+    price: {
+      type: Number,
+      required: true,
+    },
+    totalAmount: {
       type: Number,
       required: true,
     },

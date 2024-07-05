@@ -19,12 +19,14 @@ import { ScrollArea } from "../ui/scroll-area";
 
 interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[];
+  classNames?: string;
   data: TData[];
 }
 
 export function DataTable<TData, TValue>({
   columns,
   data,
+  classNames,
 }: DataTableProps<TData, TValue>) {
   const table = useReactTable({
     data,
@@ -33,7 +35,9 @@ export function DataTable<TData, TValue>({
   });
 
   return (
-    <ScrollArea className="m-4 mt-10 h-[70vh] relative rounded-md border">
+    <ScrollArea
+      className={`m-4 h-[70vh] relative rounded-md border ${classNames}`}
+    >
       <Table className="relative">
         <TableHeader className="sticky top-0 bg-white">
           {table.getHeaderGroups().map((headerGroup) => (

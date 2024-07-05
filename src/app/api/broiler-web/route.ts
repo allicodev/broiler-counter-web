@@ -86,11 +86,39 @@ export async function GET(req: NextRequest) {
 export async function POST(req: Request) {
   await dbConnect();
   let body = await req.json();
-  const count = body?.broiler ?? 0;
-  await Broiler.create({ count });
 
-  return Response.json(
-    { success: true, code: 200, message: "Sent Successfully" },
-    { status: 200 }
-  );
+  return await Broiler.findOneAndUpdate({ _id: body._id }, { $set: body })
+    .then(() =>
+      Response.json(
+        { success: true, code: 200, message: "Updated Successfully" },
+        { status: 200 }
+      )
+    )
+    .catch(() => Response.json({ success: false, code: 500 }, { status: 500 }));
+}
+
+export async function DELETE(req: NextRequest) {
+  const searchParams = req.nextUrl.searchParams;
+  let id = searchParams.get("id");
+
+  return await Broiler.findOneAndDelete({ _id: id })
+    .then(() =>
+      Response.json(
+        {
+          success: true,
+          code: 200,
+          data: {},
+        },
+        { status: 200 }
+      )
+    )
+    .catch(() =>
+      Response.json(
+        {
+          success: false,
+          code: 500,
+        },
+        { status: 500 }
+      )
+    );
 }
