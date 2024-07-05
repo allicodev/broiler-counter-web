@@ -61,6 +61,7 @@ export default function HomePage() {
   const [broilersRaw, setBroilerRaw] = useState<Broiler[]>([]);
   const [totals, setTotal] = useState({ total: 0, totalToday: 0 });
   const [openUpdate, setOpenUpdate] = useState(false);
+  const [max, setMax] = useState(0);
   const [pins, setPins] = useState({
     pin: "",
     newPin: "",
@@ -142,6 +143,7 @@ export default function HomePage() {
       let _ = new Array(12).fill(0);
       let __ = await getData();
       let _broilers = __.broilers;
+      let _max = 0;
 
       setTotal({
         total: __.total,
@@ -151,9 +153,10 @@ export default function HomePage() {
       setBroilerRaw(await getData2());
 
       for (let i = 0; i < _broilers.length; i++) {
+        if (_max < _broilers[i].count) _max = _broilers[i].count;
         _[_broilers[i].month - 1] = _broilers[i].count;
       }
-
+      setMax(Math.ceil(_max / 100) * 100);
       setBroiler(_);
     })();
   }, []);
@@ -330,7 +333,7 @@ export default function HomePage() {
               scales: {
                 y: {
                   min: 0,
-                  max: 100,
+                  max,
                   stacked: false,
                   title: {
                     display: true,
