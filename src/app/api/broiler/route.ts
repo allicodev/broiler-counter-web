@@ -13,7 +13,7 @@ export async function GET() {
 export async function POST(req: Request) {
   await dbConnect();
   let body = await req.json();
-  const { broiler, total, price } = body;
+  const { broiler, total, price } = body.broiler;
   await Broiler.create({ count: broiler, price, totalAmount: total });
 
   return Response.json(
