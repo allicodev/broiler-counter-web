@@ -3,7 +3,7 @@
 import React, { ReactNode, useEffect, useState } from "react";
 import { Bar } from "react-chartjs-2";
 import { ColumnDef } from "@tanstack/react-table";
-import { LogOut, Settings, FileBarChart2 } from "lucide-react";
+import { LogOut, Settings, FileBarChart2, LucideUsers } from "lucide-react";
 import Cookie from "js-cookie";
 import axios from "axios";
 import dayjs from "dayjs";
@@ -25,25 +25,15 @@ import { Button } from "@/components/ui/button";
 import { useToast } from "@/components/ui/use-toast";
 import { Broiler } from "@/types";
 
-import {
-  Tooltip as STooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
-
-import {
-  Dialog,
-  DialogContent,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
 
 import {
   InputOTP,
   InputOTPGroup,
   InputOTPSlot,
 } from "@/components/ui/input-otp";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import MoneyInput from "@/components/ui/money_input";
 
 ChartJS.register(
   Tooltip,
@@ -62,6 +52,7 @@ export default function HomePage() {
   const [totals, setTotal] = useState({ total: 0, totalToday: 0 });
   const [openUpdate, setOpenUpdate] = useState(false);
   const [max, setMax] = useState(0);
+  const [trigger, setTrigger] = useState(0);
   const [pins, setPins] = useState({
     pin: "",
     newPin: "",
@@ -69,9 +60,15 @@ export default function HomePage() {
   });
 
   const [isValidating, setIsValidating] = useState(false);
+  const [filter, setFilter] = useState<string>("monthly");
+  const [days, setDays] = useState<string[]>([]);
 
   const [error, setError] = useState({ isError: false, errorMsg: "" });
   const [error2, setError2] = useState({ isError: false, errorMsg: "" });
+
+  const [chickenPrice, setChickenPrice] = useState<any>(null);
+
+  const refresh = () => setTrigger(trigger + 1);
 
   const validatePinUpdate = async () => {
     setIsValidating(true);
@@ -128,8 +125,28 @@ export default function HomePage() {
     },
   ];
 
+  const handleUpdateChickenPrice = async () => {
+    const {
+      data: { success },
+    } = await axios.post("/api/chicken-price", {
+      chickenPrice,
+    });
+
+    if (success) {
+      toast({
+        title: "Successfully Updated the price",
+      });
+
+      refresh();
+    }
+  };
+
   const getData = async () => {
-    const { data } = await axios.get("/api/broiler-web");
+    const { data } = await axios.get("/api/broiler-web", {
+      params: {
+        type: filter,
+      },
+    });
     if (data?.success ?? false) return data?.data;
   };
 
@@ -138,9 +155,19 @@ export default function HomePage() {
     if (data?.success ?? false) return data?.data;
   };
 
-  useEffect(() => {
+  const getChickenPrice = async () => {
+    const { data } = await axios.get("/api/chicken-price");
+    const { success, data: apiData } = data;
+    if (success) setChickenPrice(apiData[0]?.chickenPrice ?? null);
+  };
+
+  const getChickenData = async () => {
     (async () => {
-      let _ = new Array(12).fill(0);
+      let _ = new Array(
+        filter == "monthly"
+          ? 12
+          : dayjs().endOf("month").diff(dayjs().startOf("month"), "day") + 1
+      ).fill(0);
       let __ = await getData();
       let _broilers = __.broilers;
       let _max = 0;
@@ -154,114 +181,170 @@ export default function HomePage() {
 
       for (let i = 0; i < _broilers.length; i++) {
         if (_max < _broilers[i].count) _max = _broilers[i].count;
-        _[_broilers[i].month - 1] = _broilers[i].count;
+        _[_broilers[i][filter == "monthly" ? "month" : "day"] - 1] =
+          _broilers[i].count;
       }
       setMax(Math.ceil(_max / 100) * 100);
       setBroiler(_);
     })();
-  }, []);
+
+    if (filter == "daily") {
+      const startOfMonth = dayjs().startOf("month");
+      const endOfMonth = dayjs().endOf("month");
+      let daysInMonth = [];
+      for (let day = startOfMonth.date(); day <= endOfMonth.date(); day++) {
+        daysInMonth.push(startOfMonth.date(day).format("MMM DD"));
+      }
+      setDays(daysInMonth);
+    }
+  };
+
+  useEffect(() => {
+    getChickenData();
+  }, [filter]);
+
+  useEffect(() => {
+    getChickenPrice();
+  }, [trigger]);
 
   return (
-    <TooltipProvider>
+    <>
       <div className="flex flex-row justify-end gap-2 mt-10 mr-10">
+        <Tabs defaultValue="monthly" onValueChange={(e) => setFilter(e)}>
+          <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="daily">Daily</TabsTrigger>
+            <TabsTrigger value="monthly">Monthly</TabsTrigger>
+          </TabsList>
+        </Tabs>
         <Button onClick={() => (window.location.href = "/report")}>
           <FileBarChart2 className="w-4 h-4 mr-2" /> Reports
         </Button>
+        <Button onClick={() => (window.location.href = "/user")}>
+          <LucideUsers className="w-4 h-4 mr-2" /> Users
+        </Button>
         <Dialog open={openUpdate} onOpenChange={setOpenUpdate}>
-          <STooltip>
-            <DialogTrigger asChild>
-              <TooltipTrigger asChild>
-                <Button onClick={() => setOpenUpdate(true)}>
-                  <Settings className="w-4 h-4" />
+          <DialogTrigger asChild>
+            <Button onClick={() => setOpenUpdate(true)}>
+              <Settings className="w-4 h-4" />
+            </Button>
+          </DialogTrigger>
+          <DialogContent
+            style={{
+              width: 320,
+            }}
+          >
+            <Tabs defaultValue="pin" className="mt-4">
+              <TabsList className="grid w-full grid-cols-2">
+                <TabsTrigger value="pin">PIN</TabsTrigger>
+                <TabsTrigger value="price">Price</TabsTrigger>
+              </TabsList>
+              <TabsContent value="pin">
+                <div className="flex items-center gap-4">
+                  <p>Enter Old Pin</p>
+                  {error.isError && (
+                    <span className="px-2 py-1 text-sm text-red-500">
+                      *{error.errorMsg}
+                    </span>
+                  )}
+                </div>
+                <InputOTP
+                  maxLength={6}
+                  value={pins.pin}
+                  disabled={isValidating}
+                  onChange={(e) => setPins({ ...pins, pin: e })}
+                  autoFocus
+                >
+                  <InputOTPGroup>
+                    <InputOTPSlot index={0} />
+                    <InputOTPSlot index={1} />
+                    <InputOTPSlot index={2} />
+                    <InputOTPSlot index={3} />
+                    <InputOTPSlot index={4} />
+                    <InputOTPSlot index={5} />
+                  </InputOTPGroup>
+                </InputOTP>
+                <div className="flex items-center gap-4">
+                  <p>Enter New Pin</p>
+                  {error2.isError && (
+                    <span className="px-2 py-1 text-sm text-red-500">
+                      *{error2.errorMsg}
+                    </span>
+                  )}
+                </div>
+                <InputOTP
+                  maxLength={6}
+                  value={pins.newPin}
+                  disabled={isValidating}
+                  onChange={(e) => setPins({ ...pins, newPin: e })}
+                  autoFocus
+                >
+                  <InputOTPGroup>
+                    <InputOTPSlot index={0} />
+                    <InputOTPSlot index={1} />
+                    <InputOTPSlot index={2} />
+                    <InputOTPSlot index={3} />
+                    <InputOTPSlot index={4} />
+                    <InputOTPSlot index={5} />
+                  </InputOTPGroup>
+                </InputOTP>
+                <p>Enter Confirm Pin</p>
+                <InputOTP
+                  maxLength={6}
+                  value={pins.confirmPin}
+                  disabled={isValidating}
+                  onChange={(e) => setPins({ ...pins, confirmPin: e })}
+                  autoFocus
+                >
+                  <InputOTPGroup>
+                    <InputOTPSlot index={0} />
+                    <InputOTPSlot index={1} />
+                    <InputOTPSlot index={2} />
+                    <InputOTPSlot index={3} />
+                    <InputOTPSlot index={4} />
+                    <InputOTPSlot index={5} />
+                  </InputOTPGroup>
+                </InputOTP>
+                <Button
+                  className="w-full mt-2"
+                  disabled={
+                    Object.values(pins).filter(
+                      (e) => e == "" || e == null || e.length < 6
+                    ).length > 0
+                  }
+                  onClick={validatePinUpdate}
+                >
+                  UPDATE
                 </Button>
-              </TooltipTrigger>
-            </DialogTrigger>
-            <TooltipContent>
-              <p>Update PIN</p>
-            </TooltipContent>
-            <DialogContent
-              style={{
-                width: 320,
-              }}
-            >
-              <DialogTitle>Update Pin</DialogTitle>
-              <div className="flex items-center gap-4">
-                <p>Enter Old Pin</p>
-                {error.isError && (
-                  <span className="px-2 py-1 text-sm text-red-500">
-                    *{error.errorMsg}
-                  </span>
-                )}
-              </div>
-              <InputOTP
-                maxLength={6}
-                value={pins.pin}
-                disabled={isValidating}
-                onChange={(e) => setPins({ ...pins, pin: e })}
-                autoFocus
-              >
-                <InputOTPGroup>
-                  <InputOTPSlot index={0} />
-                  <InputOTPSlot index={1} />
-                  <InputOTPSlot index={2} />
-                  <InputOTPSlot index={3} />
-                  <InputOTPSlot index={4} />
-                  <InputOTPSlot index={5} />
-                </InputOTPGroup>
-              </InputOTP>
-              <div className="flex items-center gap-4">
-                <p>Enter New Pin</p>
-                {error2.isError && (
-                  <span className="px-2 py-1 text-sm text-red-500">
-                    *{error2.errorMsg}
-                  </span>
-                )}
-              </div>
-              <InputOTP
-                maxLength={6}
-                value={pins.newPin}
-                disabled={isValidating}
-                onChange={(e) => setPins({ ...pins, newPin: e })}
-                autoFocus
-              >
-                <InputOTPGroup>
-                  <InputOTPSlot index={0} />
-                  <InputOTPSlot index={1} />
-                  <InputOTPSlot index={2} />
-                  <InputOTPSlot index={3} />
-                  <InputOTPSlot index={4} />
-                  <InputOTPSlot index={5} />
-                </InputOTPGroup>
-              </InputOTP>
-              <p>Enter Confirm Pin</p>
-              <InputOTP
-                maxLength={6}
-                value={pins.confirmPin}
-                disabled={isValidating}
-                onChange={(e) => setPins({ ...pins, confirmPin: e })}
-                autoFocus
-              >
-                <InputOTPGroup>
-                  <InputOTPSlot index={0} />
-                  <InputOTPSlot index={1} />
-                  <InputOTPSlot index={2} />
-                  <InputOTPSlot index={3} />
-                  <InputOTPSlot index={4} />
-                  <InputOTPSlot index={5} />
-                </InputOTPGroup>
-              </InputOTP>
-              <Button
-                disabled={
-                  Object.values(pins).filter(
-                    (e) => e == "" || e == null || e.length < 6
-                  ).length > 0
-                }
-                onClick={validatePinUpdate}
-              >
-                UPDATE
-              </Button>
-            </DialogContent>
-          </STooltip>
+              </TabsContent>
+              <TabsContent value="price">
+                <MoneyInput
+                  placeholder="Set the Price of Chicken"
+                  defaultValue={chickenPrice}
+                  options={{
+                    addOnBefore: {
+                      is_money: true,
+                      decorator: "₱",
+                    },
+                  }}
+                  onChange={(e) => {
+                    setChickenPrice(parseFloat(e.target.value));
+                  }}
+                />
+                <Button
+                  className="w-full mt-2"
+                  disabled={
+                    chickenPrice == null ||
+                    chickenPrice == undefined ||
+                    chickenPrice == 0 ||
+                    Number.isNaN(chickenPrice)
+                  }
+                  onClick={handleUpdateChickenPrice}
+                >
+                  UPDATE
+                </Button>
+              </TabsContent>
+            </Tabs>
+          </DialogContent>
         </Dialog>
         <Button
           onClick={() => {
@@ -279,7 +362,7 @@ export default function HomePage() {
           <LogOut className="w-4 h-4 mr-2" /> Logout
         </Button>
       </div>
-      <div className="flex min-h-screen justify-evenly">
+      <div className="flex min-h-screen justify-evenly mt-10">
         <div className="flex flex-col w-2/3 gap-y-8">
           <div className="flex gap-x-8">
             <AnalyticalCard
@@ -293,7 +376,7 @@ export default function HomePage() {
           </div>
           <Bar
             data={{
-              labels: jason.months,
+              labels: filter == "daily" ? days : jason.months,
               datasets: [
                 {
                   label: "Broiler",
@@ -390,6 +473,6 @@ export default function HomePage() {
         </div>
         <DataTable columns={columns} data={broilersRaw} classNames="mt-10" />
       </div>
-    </TooltipProvider>
+    </>
   );
 }

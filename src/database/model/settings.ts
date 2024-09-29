@@ -6,6 +6,10 @@ const SettingsSchema = new mongoose.Schema(
       type: String,
       required: true,
     },
+    chickenPrice: {
+      type: Number,
+      required: true,
+    },
   },
   { timestamps: false }
 );

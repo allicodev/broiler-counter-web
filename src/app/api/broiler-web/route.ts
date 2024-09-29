@@ -15,6 +15,7 @@ export async function GET(req: NextRequest) {
 
   const searchParams = req.nextUrl.searchParams;
   let year = searchParams.get("year");
+  let type = searchParams.get("type");
 
   if (!year) year = new Date().getFullYear().toString();
 
@@ -40,30 +41,62 @@ export async function GET(req: NextRequest) {
     }).select("count")
   ).reduce((p, n) => p + n.count, 0);
 
-  return await Broiler.aggregate([
-    {
-      $match: {
-        $expr: {
-          $eq: [{ $year: "$createdAt" }, parseInt(year)],
-        },
-      },
-    },
-    {
-      $group: {
-        _id: {
-          month: { $month: "$createdAt" },
-        },
-        count: { $sum: "$count" },
-      },
-    },
-    {
-      $project: {
-        _id: 0,
-        month: "$_id.month",
-        count: 1,
-      },
-    },
-  ])
+  return await Broiler.aggregate(
+    type == "monthly"
+      ? [
+          {
+            $match: {
+              $expr: {
+                $eq: [{ $year: "$createdAt" }, parseInt(year)],
+              },
+            },
+          },
+          {
+            $group: {
+              _id: {
+                month: { $month: "$createdAt" },
+              },
+              count: { $sum: "$count" },
+            },
+          },
+          {
+            $project: {
+              _id: 0,
+              month: "$_id.month",
+              count: 1,
+            },
+          },
+        ]
+      : [
+          {
+            $match: {
+              $expr: {
+                $and: [
+                  { $eq: [{ $year: "$createdAt" }, parseInt(year)] },
+                  {
+                    $eq: [{ $month: "$createdAt" }, new Date().getMonth() + 1],
+                  },
+                ],
+              },
+            },
+          },
+          {
+            $group: {
+              _id: {
+                day: { $dayOfMonth: "$createdAt" },
+              },
+              count: { $sum: "$count" },
+            },
+          },
+          {
+            $project: {
+              _id: 0,
+              day: "$_id.day",
+              count: 1,
+            },
+          },
+        ]
+  )
     .then((result) => {
       return Response.json(
         {

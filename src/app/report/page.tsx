@@ -1,13 +1,15 @@
 "use client";
 
+import React, { ReactNode, useEffect, useState } from "react";
+import { ColumnDef } from "@tanstack/react-table";
+import axios from "axios";
+import dayjs from "dayjs";
+import Excel from "exceljs";
+
 import { DataTable } from "@/components/tables/recent_data-tables";
 import { Button } from "@/components/ui/button";
 import { Broiler } from "@/types";
-import { ColumnDef } from "@tanstack/react-table";
 import { Settings, Trash2, Download, ChevronLeft } from "lucide-react";
-import axios from "axios";
-import dayjs from "dayjs";
-import React, { ReactNode, useEffect, useState } from "react";
 import {
   Popover,
   PopoverContent,
@@ -16,10 +18,11 @@ import {
 import { PopoverClose } from "@radix-ui/react-popover";
 import { LoadingSpinner } from "@/components/ui/spinner";
 import { useToast } from "@/components/ui/use-toast";
-
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import Excel from "exceljs";
+import { ComboBox } from "@/components/ui/combobox";
+
+import jason from "@/assets/json/constant.json";
 
 interface ExtendedBroiler extends Broiler {
   name: string;
@@ -55,16 +58,30 @@ export default function Report() {
       cell: ({ getValue }) => <div>{getValue() as ReactNode}</div>,
     },
     {
+      accessorKey: "price",
+      header: "Price",
+      cell: ({ getValue }) =>
+        getValue() != null ? (
+          <div>₱{getValue() as ReactNode}</div>
+        ) : (
+          <span className="text-slate-300">N/A</span>
+        ),
+    },
+    {
       accessorKey: "totalAmount",
       header: "Total Amount",
-      cell: ({ getValue }) => (
-        <div>
-          {(getValue() as number)?.toLocaleString(undefined, {
-            minimumFractionDigits: 2,
-            maximumFractionDigits: 2,
-          })}
-        </div>
-      ),
+      cell: ({ getValue }) =>
+        getValue() != null ? (
+          <div>
+            ₱
+            {(getValue() as number)?.toLocaleString(undefined, {
+              minimumFractionDigits: 2,
+              maximumFractionDigits: 2,
+            })}
+          </div>
+        ) : (
+          <span className="text-slate-300">N/A</span>
+        ),
     },
     {
       accessorKey: "_id",
@@ -107,8 +124,12 @@ export default function Report() {
 
   const reloadTable = () => setTrigger(trigger + 1);
 
-  const getData2 = async () => {
-    const { data } = await axios.get("/api/broiler");
+  const getData2 = async (month?: number | null) => {
+    const { data } = await axios.get("/api/broiler", {
+      params: {
+        month,
+      },
+    });
     if (data?.success ?? false) return data?.data;
   };
 
@@ -148,6 +169,16 @@ export default function Report() {
         title: "Table has been refreshed",
       });
     } else setLoading(false);
+  };
+
+  const handleOnSelectFilter = (value: string) => {
+    const monthIndex = jason.months.findIndex(
+      (e) => e.toLocaleLowerCase() == value
+    );
+
+    (async () => {
+      setBroilerRaw(await getData2(monthIndex < 0 ? null : monthIndex));
+    })();
   };
 
   const exportToExcel = () => {
@@ -272,19 +303,35 @@ export default function Report() {
 
   return (
     <div className="flex flex-col m-4">
-      <Button
-        className="w-24 ml-4"
-        onClick={() => (window.location.href = "/")}
-      >
-        <ChevronLeft />
-        BACK
-      </Button>
       <div className="flex justify-between">
-        <span className="mt-4 ml-4 text-5xl">Reports</span>
+        <Button
+          className="w-24 ml-4"
+          onClick={() => (window.location.href = "/")}
+        >
+          <ChevronLeft />
+          BACK
+        </Button>
         <Button className="mr-4 w-30" onClick={exportToExcel}>
           <Download className="mr-4" />
           EXPORT
         </Button>
+      </div>
+      <div className="flex justify-between items-end">
+        <span className="mt-4 ml-4 text-5xl">Reports</span>
+        <ComboBox
+          onSelect={handleOnSelectFilter}
+          placeholder="Select a Month"
+          items={[
+            {
+              label: "All",
+              value: "all",
+            },
+            ...jason.months.map((e) => ({
+              label: e,
+              value: e.toLocaleLowerCase(),
+            })),
+          ]}
+        />
       </div>
       <DataTable columns={columns} data={broilersRaw} />
       <Dialog
