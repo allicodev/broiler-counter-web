@@ -14,10 +14,15 @@ export async function GET() {
 export async function POST(req: Request) {
   await dbConnect();
   let body = await req.json();
-  await User.create(body);
+  if (body?.id != null) await User.findOneAndUpdate({ _id: body.id }, body);
+  else await User.create(body);
 
   return Response.json(
-    { success: true, code: 200, message: "Sent Successfully" },
+    {
+      success: true,
+      code: 200,
+      message: body?.id != null ? "Updated Successfully" : "Sent Successfully",
+    },
     { status: 200 }
   );
 }

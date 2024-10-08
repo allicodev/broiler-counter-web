@@ -53,21 +53,33 @@ const User = () => {
       password: z
         .string()
         .min(6, { message: "Password should be atleast 6 in length" }),
-      confirmPassword: z
-        .string()
-        .min(6, { message: "Password should be atleast 6 in length" }),
+
+      ...(openForm.data == null
+        ? {
+            confirmPassword: z
+              .string()
+              .min(6, { message: "Password should be atleast 6 in length" }),
+          }
+        : {}),
     })
-    .refine((data) => data.password === data.confirmPassword, {
-      message: "Passwords don't match",
-      path: ["confirmPassword"],
-    });
+    .refine(
+      (data) =>
+        openForm.data == null ? data.password === data.confirmPassword : true,
+      {
+        message: "Passwords don't match",
+        path: ["confirmPassword"],
+      }
+    );
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
   });
 
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
-    const { data } = await axios.post("/api/user", values);
+    const { data } = await axios.post("/api/user", {
+      ...values,
+      ...(openForm.data != null ? { id: openForm.data?._id ?? "" } : {}),
+    });
     const { success } = data;
 
     if (success) {
@@ -108,8 +120,9 @@ const User = () => {
       cell: ({ getValue, row }) => (
         <div className="flex gap-2">
           <Button
-            onClick={() => setOpenForm({ open: true, data: row.original })}
-            disabled
+            onClick={() => {
+              setOpenForm({ open: true, data: row.original });
+            }}
           >
             <Settings className="mr-2" /> Edit
           </Button>
@@ -161,31 +174,16 @@ const User = () => {
     }
   };
 
-  //   const handleUpdate = async () => {
-  //     setLoading(true);
-  //     const totalAmount =
-  //       (openEdit?.broiler?.count ?? 0) * (openEdit?.broiler?.price ?? 0);
-
-  //     let res = await axios.post("/api/broiler-web", {
-  //       ...openEdit.broiler,
-  //       totalAmount,
-  //     });
-
-  //     if (res?.data?.success ?? false) {
-  //       setLoading(false);
-  //       reloadTable();
-  //       setOpenEdit({ open: false, broiler: null });
-  //       toast({
-  //         title: "Table has been refreshed",
-  //       });
-  //     } else setLoading(false);
-  //   };
-
   useEffect(() => {
     (async () => {
       setUsers(await getData2());
     })();
-  }, [trigger]);
+
+    if (openForm.open && openForm.data != null) form.reset(openForm.data);
+    else {
+      form.reset({ name: "" });
+    }
+  }, [trigger, openForm, form]);
 
   return (
     <div className="flex flex-col m-4">
@@ -199,7 +197,10 @@ const User = () => {
         </Button>
         <Button
           className="mr-4 w-30"
-          onClick={() => setOpenForm({ open: true, data: null })}
+          onClick={() => {
+            setOpenForm({ open: true, data: null });
+            form.resetField("name");
+          }}
         >
           <UserPlus className="mr-4" />
           New User
@@ -223,6 +224,7 @@ const User = () => {
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
               <FormField
+                {...form.register("name")}
                 control={form.control}
                 name="name"
                 render={({ field }) => (
@@ -238,6 +240,7 @@ const User = () => {
                 )}
               />
               <FormField
+                {...form.register("lastname")}
                 control={form.control}
                 name="lastname"
                 render={({ field }) => (
@@ -253,6 +256,7 @@ const User = () => {
                 )}
               />
               <FormField
+                {...form.register("username")}
                 control={form.control}
                 name="username"
                 render={({ field }) => (
@@ -268,6 +272,7 @@ const User = () => {
                 )}
               />
               <FormField
+                {...form.register("password")}
                 control={form.control}
                 name="password"
                 render={({ field }) => (
@@ -284,6 +289,7 @@ const User = () => {
               />
               {openForm.data == null && (
                 <FormField
+                  {...form.register("confirmPassword")}
                   control={form.control}
                   name="confirmPassword"
                   render={({ field }) => (
@@ -293,7 +299,7 @@ const User = () => {
                         <FormMessage />
                       </div>
                       <FormControl>
-                        <PasswordInput {...field} />
+                        <PasswordInput {...(field as any)} />
                       </FormControl>
                     </FormItem>
                   )}
