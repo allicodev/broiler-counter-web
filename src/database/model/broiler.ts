@@ -1,10 +1,11 @@
 import mongoose from "mongoose";
+import UserSchema from "./user.model";
 
 const BroilerSchema = new mongoose.Schema(
   {
-    name: {
-      type: String,
-      default: "Broiler",
+    user: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: UserSchema,
     },
     count: {
       type: Number,

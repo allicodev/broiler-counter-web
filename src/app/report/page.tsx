@@ -23,6 +23,7 @@ import { Input } from "@/components/ui/input";
 import { ComboBox } from "@/components/ui/combobox";
 
 import jason from "@/assets/json/constant.json";
+import { Label } from "@/components/ui/label";
 
 interface ExtendedBroiler extends Broiler {
   name: string;
@@ -41,9 +42,14 @@ export default function Report() {
 
   const columns: ColumnDef<Broiler>[] = [
     {
-      accessorKey: "name",
+      accessorKey: "user",
       header: "Name",
-      cell: ({ getValue }) => getValue() ?? "Broiler",
+      cell: ({ getValue }) =>
+        getValue() != null && getValue() != undefined ? (
+          (getValue() as any)?.name + " " + (getValue() as any)?.lastname
+        ) : (
+          <Label className="italic text-slate-400">No Name</Label>
+        ),
     },
     {
       accessorKey: "createdAt",

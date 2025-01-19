@@ -1,3 +1,5 @@
+import User from "@/app/user/user.types";
+
 export interface Response {
   code: number;
   success: boolean;
@@ -14,7 +16,7 @@ export interface ExtendedResponse<T> extends Response {
 
 export interface Broiler {
   _id?: string;
-  name: string;
+  user?: User;
   count: number;
   price: number;
   totalAmount: number;

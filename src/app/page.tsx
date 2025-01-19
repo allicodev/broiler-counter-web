@@ -407,7 +407,7 @@ export default function HomePage() {
                 title: {
                   display: true,
                   position: "bottom",
-                  text: "Broiler Count in the Year 2024",
+                  text: `Broiler Count in the Year ${new Date().getFullYear()}`,
                   font: {
                     size: 32,
                   },

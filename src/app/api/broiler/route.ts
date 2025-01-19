@@ -17,7 +17,9 @@ export async function GET(req: NextRequest) {
     };
   }
 
-  let broilers = await Broiler.find(query).sort({ createdAt: -1 });
+  let broilers = await Broiler.find(query)
+    .populate("user")
+    .sort({ createdAt: -1 });
   return Response.json(
     { success: true, code: 200, data: broilers },
     { status: 200 }
@@ -27,8 +29,8 @@ export async function GET(req: NextRequest) {
 export async function POST(req: Request) {
   await dbConnect();
   let body = await req.json();
-  const { broiler, total, price } = body.broiler;
-  await Broiler.create({ count: broiler, price, totalAmount: total });
+  const { broiler, total, price, user } = body.broiler;
+  await Broiler.create({ count: broiler, price, totalAmount: total, user });
 
   return Response.json(
     { success: true, code: 200, message: "Sent Successfully" },
