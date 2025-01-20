@@ -25,16 +25,12 @@ import { ComboBox } from "@/components/ui/combobox";
 import jason from "@/assets/json/constant.json";
 import { Label } from "@/components/ui/label";
 
-interface ExtendedBroiler extends Broiler {
-  name: string;
-}
-
 export default function Report() {
   const [broilersRaw, setBroilerRaw] = useState<Broiler[]>([]);
   const [loading, setLoading] = useState(false);
   const [openEdit, setOpenEdit] = useState<{
     open: boolean;
-    broiler: ExtendedBroiler | null;
+    broiler: Broiler | null;
   }>({ open: false, broiler: null });
   const [trigger, setTrigger] = useState(0);
 
@@ -229,14 +225,14 @@ export default function Report() {
 
     broilersRaw.map((e) => {
       sheet.addRow({
-        name: e.name ?? "No Name",
+        name: e.user?.name ?? "No Name",
         date: dayjs(e.createdAt).format("MMMM DD, YYYY - hh:mma"),
         count: e.count,
         total:
           [0, undefined, null].includes(e.count) ||
           [0, undefined, null].includes(e.price)
             ? 0
-            : e.count * e.price,
+            : e?.count ?? 1 * (e?.price ?? 0),
       });
     });
 
@@ -259,7 +255,7 @@ export default function Report() {
         ([0, undefined, null].includes(n.count) ||
         [0, undefined, null].includes(n.price)
           ? 0
-          : n.price * n.count),
+          : n.price ?? 0 * (n.count ?? 1)),
       0
     );
     s("d").value = total.toFixed(2);
@@ -356,13 +352,16 @@ export default function Report() {
               Name
             </label>
             <Input
-              defaultValue={openEdit?.broiler?.name ?? ""}
+              defaultValue={openEdit?.broiler?.user?.name ?? ""}
               onChange={(e) =>
                 setOpenEdit({
                   ...openEdit,
                   broiler: {
-                    ...openEdit.broiler!,
-                    name: e.target.value,
+                    ...openEdit.broiler,
+                    user: {
+                      ...openEdit.broiler?.user!,
+                      name: e.target.value,
+                    },
                   },
                 })
               }

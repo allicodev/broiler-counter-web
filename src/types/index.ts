@@ -17,9 +17,9 @@ export interface ExtendedResponse<T> extends Response {
 export interface Broiler {
   _id?: string;
   user?: User;
-  count: number;
-  price: number;
-  totalAmount: number;
-  createdAt: Date;
+  count?: number;
+  price?: number;
+  totalAmount?: number;
+  createdAt?: Date;
   month?: number;
 }
